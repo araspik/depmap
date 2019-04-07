@@ -1,0 +1,68 @@
+#   Cargo
+# =========
+
+#  Package
+# =========
+# Everything about gdepm.
+[package]
+
+# Dependency-handling configuration
+name = "depmap"
+version = "0.0.1"
+
+# Crates.io metadata
+authors = ["ARaspiK <araspik@protonmail.com>"]
+categories = []
+description = "Dependency map manipulation"
+documentation = "https://docs.rs/depmap"
+#exclude = []
+homepage = "https://github.com/araspik/depmap/blob/master/README.md"
+#include = []
+keywords = ["dependencies"]
+license = "MIT"
+#license-file = ""
+publish = true
+readme = "README.md"
+repository = "https://github.com/araspik/depmap"
+
+# Build configuration
+#build = "build.rs"
+edition = "2018"
+#links = ""
+#workspace = ""
+
+#  Badges
+# ========
+# Displayed on crates.io.
+[badges]
+#appveyor = {repository = "", branch = "", service = ""}
+#circle-ci = {repository = "", branch = ""}
+#gitlab = {repository = "", branch = ""}
+#travis-ci = {repository = "", branch = ""}
+#codecov = {repository = "", branch = "", service = ""}
+#coveralls = {repository = "", branch = "", service = ""}
+#is-it-maintained-issue-resolution = {repository = ""}
+#is-it-maintained-open-issues = {repository = ""}
+maintenance = {status = "passively-maintained"}
+
+#  Dependencies
+# ==============
+[dependencies]
+[build-dependencies]
+[dev-dependencies]
+
+#  Profiles
+# ==========
+[profile.dev]
+[profile.release]
+[profile.test]
+[profile.bench]
+
+#  Features
+# ==========
+[features]
+default = []
+
+#  Workspace
+# ===========
+[workspace]

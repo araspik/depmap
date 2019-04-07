@@ -1,0 +1,8 @@
+
+#   Gitignores
+# ==============
+# Currently only Rust-specific. More stuff may be added later.
+
+/target
+**/*.rs.bk
+Cargo.lock
