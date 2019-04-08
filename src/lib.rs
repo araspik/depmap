@@ -5,6 +5,20 @@
 //!
 //! Cyclic dependencies are found and handled.
 
+/// An error type.
+pub enum Error<T, E> {
+    /// A cyclic dependency error.
+    CyclicDep(Vec<T>),
+    /// A user-defined error.
+    UserDef(E),
+}
+
+impl<T, E> From<E> for Error<T, E> {
+    fn from(err: E) -> Self {
+        Error::UserDef(err)
+    }
+}
+
 /// The dependency map.
 pub struct DepMap<T: PartialEq> {
     /// A list of lists of things that need to be worked on at the same level.
@@ -30,8 +44,8 @@ impl<T: PartialEq> DepMap<T> {
     /// Runs through a whole dependency map using a single producer function.
     ///
     /// This is probably what one should use.
-    pub fn process<F, I>(initial: Vec<T>, mut f: F) -> Result<Vec<T>, Vec<T>>
-    where F: FnMut(&T) -> I, I: Iterator<Item = T> {
+    pub fn process<F, I, E>(initial: Vec<T>, mut f: F) -> Result<Vec<T>, Error<T, E>>
+    where F: FnMut(&T) -> Result<I, E>, I: Iterator<Item = T> {
         // The current map.
         let mut state = Self::new(initial);
         loop {
@@ -41,15 +55,14 @@ impl<T: PartialEq> DepMap<T> {
             };
 
             // Not empty; Process
-            state.add(&mut f)
-                // Returning cyclic dependencies by value, not reference
-                .map_err(|deps| deps.len())
-                .map_err(|len| state.list.iter_mut()
+            state.add(&mut f)?
+                .map(|deps| deps.len())
+                .map_or(Ok(()), |len| Err(state.list.iter_mut()
                     .take(state.used)
                     .skip(state.used - len)
                     .map(|list| list.swap_remove(0))
-                    .collect::<Vec<_>>())
-                ?;
+                    .collect::<Vec<_>>()))
+                .map_err(Error::CyclicDep)?;
         }
     }
 
@@ -74,16 +87,16 @@ impl<T: PartialEq> DepMap<T> {
     ///
     /// When cyclic dependency errors occur, the target is retained but its dependencies are not.
     /// Skips everything if the depmap is empty.
-    pub fn add<F, I>(&mut self, f: F) -> Result<(), Vec<&T>>
-    where F: FnOnce(&T) -> I, I: Iterator<Item = T> {
+    pub fn add<F, I, E>(&mut self, f: F) -> Result<Option<Vec<&T>>, E>
+    where F: FnOnce(&T) -> Result<I, E>, I: Iterator<Item = T> {
         if self.is_empty() {
-            return Ok(());
+            return Ok(None);
         }
 
         // Get a free list.
         let mut free = self.get_free();
         // Add to it the new targets.
-        for tgt in (f)(&self.list[self.used - 1][0]) {
+        for tgt in (f)(&self.list[self.used - 1][0])? {
             if self.result.iter().any(|done| done == &tgt) {
                 // Found in result list; already done, skip
                 continue;
@@ -92,7 +105,7 @@ impl<T: PartialEq> DepMap<T> {
                 // Found in active target list; cyclic dependency, fail
                 free.clear();
                 self.list.push(free);
-                return Err(self.list[pos..self.used].iter().map(|list| &list[0]).collect())
+                return Ok(Some(self.list[pos..self.used].iter().map(|list| &list[0]).collect()))
             } else {
                 // No issues; unhandled, add to list
                 free.push(tgt)
@@ -109,7 +122,7 @@ impl<T: PartialEq> DepMap<T> {
             self.list.swap(len, self.used);
             self.used += 1;
         }
-        Ok(())
+        Ok(None)
     }
 
     /// Returns a free list.
