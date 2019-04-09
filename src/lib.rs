@@ -45,7 +45,7 @@ impl<T: PartialEq> DepMap<T> {
     ///
     /// This is probably what one should use.
     pub fn process<F, I, E>(initial: Vec<T>, mut f: F) -> Result<Vec<T>, Error<T, E>>
-    where F: FnMut(&T) -> Result<I, E>, I: Iterator<Item = T> {
+    where F: FnMut(&T) -> I, I: Iterator<Item = Result<T, E>> {
         // The current map.
         let mut state = Self::new(initial);
         loop {
@@ -88,7 +88,7 @@ impl<T: PartialEq> DepMap<T> {
     /// When cyclic dependency errors occur, the target is retained but its dependencies are not.
     /// Skips everything if the depmap is empty.
     pub fn add<F, I, E>(&mut self, f: F) -> Result<Option<Vec<&T>>, E>
-    where F: FnOnce(&T) -> Result<I, E>, I: Iterator<Item = T> {
+    where F: FnOnce(&T) -> I, I: Iterator<Item = Result<T, E>> {
         if self.is_empty() {
             return Ok(None);
         }
@@ -96,7 +96,8 @@ impl<T: PartialEq> DepMap<T> {
         // Get a free list.
         let mut free = self.get_free();
         // Add to it the new targets.
-        for tgt in (f)(&self.list[self.used - 1][0])? {
+        for tgt in (f)(&self.list[self.used - 1][0]) {
+            let tgt = tgt?;
             if self.result.iter().any(|done| done == &tgt) {
                 // Found in result list; already done, skip
                 continue;

@@ -8,7 +8,7 @@
 
 # Dependency-handling configuration
 name = "depmap"
-version = "0.0.2"
+version = "0.0.3"
 
 # Crates.io metadata
 authors = ["ARaspiK <araspik@protonmail.com>"]
